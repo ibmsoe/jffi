@@ -67,6 +67,10 @@ OFLAGS = -O2 $(JFLAGS)
 ifneq ($(OS),darwin)
   WFLAGS = -W -Werror -Wall -Wno-unused -Wno-parentheses -Wundef
 endif
+
+ifeq ($(findstring $(CPU), ppc),)
+  WFLAGS = -W -Wno-error -Wall -Wno-unused -Wno-parentheses -Wundef
+endif
 PICFLAGS = -fPIC
 SOFLAGS = # Filled in for each OS specifically
 FFI_MMAP_EXEC = -DFFI_MMAP_EXEC_WRIT
@@ -156,7 +160,11 @@ ifeq ($(OS), darwin)
 endif
 
 ifeq ($(OS), linux)
-  SOFLAGS = -shared -mimpure-text -static-libgcc -Wl,-soname,$(@F) -Wl,-O1
+  ifneq ($(findstring $(CPU), ppc),)
+    SOFLAGS = -shared -mimpure-text -static-libgcc -Wl,-soname,$(@F) -Wl,-O1
+  else
+    SOFLAGS = -shared -static-libgcc -Wl,-soname,$(@F) -Wl,-O1
+  endif
   CFLAGS += -pthread
 endif
 
@@ -206,7 +214,7 @@ ifeq ($(CPU), s390x)
 endif
 
 # On platforms (linux, solaris) that support both 32bit and 64bit, force building for one or the other
-ifneq ($(strip $(findstring $(OS), linux solaris)),)
+ifneq ($(strip $(findstring $(OS), solaris)),)
   # Change the CC/LD instead of CFLAGS/LDFLAGS, incase other things in the flags
   # makes the libffi build choke
   CC += -m$(MODEL)
